@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Simulador Rede de Petri - AC3</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; position: relative; overflow: hidden;}
+        
+        /* Configuração da Marca d'água */
+        .marca-dagua {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 120px;
+            color: rgba(0, 0, 0, 0.04); /* Deixa a letra bem fraquinha/transparente */
+            font-weight: bold;
+            z-index: 1; /* Fica no fundo */
+            pointer-events: none; /* Ignora o mouse, não atrapalha o clique */
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .container { display: flex; align-items: center; justify-content: center; gap: 20px; position: relative; margin-top: 50px; z-index: 2;}
+        
+        .lugar { 
+            width: 120px; height: 120px; border-radius: 50%; border: 4px solid #2c3e50; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background-color: #ecf0f1; position: relative;
+        }
+        
+        .transicao { 
+            width: 40px; height: 100px; background-color: #e74c3c; border: 2px solid #c0392b;
+            display: flex; align-items: center; justify-content: center; color: white; writing-mode: vertical-rl; font-weight: bold;
+        }
+
+        .ficha {
+            width: 25px; height: 25px; background-color: #27ae60; border-radius: 50%;
+            position: absolute; transition: transform 1.5s ease-in-out;
+            z-index: 10; 
+        }
+
+        button {
+            margin-top: 40px; padding: 10px 20px; font-size: 16px; cursor: pointer;
+            background-color: #2980b9; color: white; border: none; border-radius: 5px; margin-right: 10px;
+            position: relative; z-index: 2;
+        }
+        button:hover { background-color: #3498db; }
+        .labels { font-weight: bold; margin-bottom: -10px; color: #333; }
+    </style>
+</head>
+<body>
+
+    <div class="marca-dagua">Rogger</div>
+
+    <h2>Rede de Petri: O Gargalo do Corte de Legumes</h2>
+    <p>Clique no botão para simular o processo da Cozinha.</p>
+
+    <div class="container">
+        <div>
+            <div class="labels">Legumes Inteiros</div><br>
+            <div class="lugar" id="lugar1">
+                <div class="ficha" id="ficha"></div>
+            </div>
+        </div>
+
+        <div style="font-size: 30px;">&#10145;</div>
+
+        <div class="transicao">CORTAR</div>
+
+        <div style="font-size: 30px;">&#10145;</div>
+
+        <div>
+            <div class="labels">Legumes Cortados</div><br>
+            <div class="lugar" id="lugar2"></div>
+        </div>
+    </div>
+
+    <button onclick="moverFicha()">Disparar Ação (Cortar Legumes)</button>
+    <button onclick="reiniciar()" style="background-color: #7f8c8d;">Reiniciar</button>
+
+    <script>
+        let estado = 0; 
+
+        function moverFicha() {
+            if (estado === 0) {
+                document.getElementById("ficha").style.transform = "translateX(330px)";
+                estado = 1;
+            } else {
+                alert("Os legumes já foram cortados! Clique em Reiniciar.");
+            }
+        }
+
+        function reiniciar() {
+            document.getElementById("ficha").style.transform = "translateX(0px)";
+            estado = 0;
+        }
+    </script>
+
+</body>
+</html>
