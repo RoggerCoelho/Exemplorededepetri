@@ -2,100 +2,175 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>Simulador Rede de Petri - AC3</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Rede de Petri: Restaurante</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; position: relative; overflow: hidden;}
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; padding: 20px; }
         
-        /* Configuração da Marca d'água */
+        /* Marca d'água */
         .marca-dagua {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-30deg);
-            font-size: 120px;
-            color: rgba(0, 0, 0, 0.04); /* Deixa a letra bem fraquinha/transparente */
-            font-weight: bold;
-            z-index: 1; /* Fica no fundo */
-            pointer-events: none; /* Ignora o mouse, não atrapalha o clique */
-            user-select: none;
-            white-space: nowrap;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 150px; color: rgba(255, 255, 255, 0.03); font-weight: bold;
+            z-index: 0; pointer-events: none; user-select: none; white-space: nowrap;
         }
 
-        .container { display: flex; align-items: center; justify-content: center; gap: 20px; position: relative; margin-top: 50px; z-index: 2;}
+        .app-container { width: 100%; max-width: 400px; z-index: 1; position: relative; }
         
-        .lugar { 
-            width: 120px; height: 120px; border-radius: 50%; border: 4px solid #2c3e50; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            background-color: #ecf0f1; position: relative;
-        }
+        .header { font-size: 18px; font-weight: 500; margin-bottom: 30px; margin-top: 20px;}
         
-        .transicao { 
-            width: 40px; height: 100px; background-color: #e74c3c; border: 2px solid #c0392b;
-            display: flex; align-items: center; justify-content: center; color: white; writing-mode: vertical-rl; font-weight: bold;
-        }
+        /* Painel de Contadores */
+        .stats { margin-bottom: 30px; }
+        .stat-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #333; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #aaa; }
+        .stat-value { font-weight: bold; color: #fff; font-size: 16px; }
 
-        .ficha {
-            width: 25px; height: 25px; background-color: #27ae60; border-radius: 50%;
-            position: absolute; transition: transform 1.5s ease-in-out;
-            z-index: 10; 
-        }
+        /* Área de Simulação (Rede de Petri) */
+        .simulation-area { background-color: #1c1c1e; border-radius: 16px; padding: 40px 20px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; min-height: 250px; position: relative; }
 
-        button {
-            margin-top: 40px; padding: 10px 20px; font-size: 16px; cursor: pointer;
-            background-color: #2980b9; color: white; border: none; border-radius: 5px; margin-right: 10px;
-            position: relative; z-index: 2;
-        }
-        button:hover { background-color: #3498db; }
-        .labels { font-weight: bold; margin-bottom: -10px; color: #333; }
+        .node-container { display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; width: 30%; }
+        
+        .place { width: 70px; height: 70px; border-radius: 50%; border: 3px solid #666; display: flex; justify-content: center; align-items: center; gap: 4px; flex-wrap: wrap; padding: 10px; background-color: #1c1c1e; z-index: 2;}
+        .place-label { font-size: 10px; text-transform: uppercase; text-align: center; font-weight: bold; border: 1px solid #fff; padding: 4px 8px; border-radius: 12px; }
+
+        .transition { width: 25px; height: 60px; background-color: #5c8eb8; display: flex; justify-content: center; align-items: center; border-radius: 4px; position: relative; z-index: 2; transition: background-color 0.3s;}
+        .transition-label { position: absolute; top: -25px; font-size: 10px; font-weight: bold; white-space: nowrap; text-align: center; }
+
+        /* As Fichas (Tokens) */
+        .token { width: 12px; height: 12px; background-color: #f39c12; border-radius: 50%; box-shadow: 0 0 8px rgba(243, 156, 18, 0.8); }
+
+        /* Linhas conectoras */
+        .line { position: absolute; height: 2px; background-color: #444; width: 100%; top: 35px; left: 0; z-index: 1; }
+
+        /* Controles */
+        .controls { display: flex; flex-direction: column; gap: 10px; }
+        .btn-row { display: flex; gap: 10px; }
+        button { background-color: #3a3a3c; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 14px; font-weight: 500; cursor: pointer; transition: 0.2s; flex: 1; }
+        button:hover { background-color: #4a4a4c; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-full { width: 100%; }
+        
+        /* Efeito de processamento (Gargalo) */
+        .processing { background-color: #e67e22 !important; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(0.98); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
     <div class="marca-dagua">Rogger</div>
 
-    <h2>Rede de Petri: O Gargalo do Corte de Legumes</h2>
-    <p>Clique no botão para simular o processo da Cozinha.</p>
+    <div class="app-container">
+        <div class="header">Simulador de Rede de Petri: Restaurante</div>
 
-    <div class="container">
-        <div>
-            <div class="labels">Legumes Inteiros</div><br>
-            <div class="lugar" id="lugar1">
-                <div class="ficha" id="ficha"></div>
+        <div class="stats">
+            <div class="stat-row"><span>Inteiros</span> <span class="stat-value" id="val-inteiros">3</span></div>
+            <div class="stat-row"><span>Cortados</span> <span class="stat-value" id="val-cortados">0</span></div>
+            <div class="stat-row"><span>Prontos</span> <span class="stat-value" id="val-prontos">0</span></div>
+        </div>
+
+        <div class="simulation-area">
+            <div class="line"></div>
+            
+            <div class="node-container">
+                <div class="place" id="place-inteiros"></div>
+                <div class="place-label">Inteiros</div>
+            </div>
+
+            <div class="node-container" style="width: auto;">
+                <div class="transition-label">Cortar Legumes</div>
+                <div class="transition" id="trans-1"></div>
+            </div>
+
+            <div class="node-container">
+                <div class="place" id="place-cortados"></div>
+                <div class="place-label">Cortados</div>
+            </div>
+
+            <div class="node-container" style="width: auto;">
+                <div class="transition-label">Montar Marmita</div>
+                <div class="transition" id="trans-2" style="background-color: #7f8c8d;">🍽</div>
+            </div>
+
+            <div class="node-container">
+                <div class="place" id="place-prontos"></div>
+                <div class="place-label">Marmita</div>
             </div>
         </div>
 
-        <div style="font-size: 30px;">&#10145;</div>
-
-        <div class="transicao">CORTAR</div>
-
-        <div style="font-size: 30px;">&#10145;</div>
-
-        <div>
-            <div class="labels">Legumes Cortados</div><br>
-            <div class="lugar" id="lugar2"></div>
+        <div class="controls">
+            <div class="btn-row">
+                <button id="btn-t1" onclick="cortarLegumes()">Cortar Legumes (T1)</button>
+                <button id="btn-t2" onclick="montarMarmita()">Montar Marmita (T2)</button>
+            </div>
+            <button class="btn-full" onclick="reiniciar()">Reiniciar Processo</button>
         </div>
     </div>
 
-    <button onclick="moverFicha()">Disparar Ação (Cortar Legumes)</button>
-    <button onclick="reiniciar()" style="background-color: #7f8c8d;">Reiniciar</button>
-
     <script>
-        let estado = 0; 
+        let inteiros = 3;
+        let cortados = 0;
+        let prontos = 0;
+        let isProcessing = false;
 
-        function moverFicha() {
-            if (estado === 0) {
-                document.getElementById("ficha").style.transform = "translateX(330px)";
-                estado = 1;
-            } else {
-                alert("Os legumes já foram cortados! Clique em Reiniciar.");
+        // Função para desenhar as bolinhas (fichas) dentro dos círculos
+        function renderTokens() {
+            document.getElementById('val-inteiros').innerText = inteiros;
+            document.getElementById('val-cortados').innerText = cortados;
+            document.getElementById('val-prontos').innerText = prontos;
+
+            const makeTokens = (qtd) => Array(qtd).fill('<div class="token"></div>').join('');
+            
+            document.getElementById('place-inteiros').innerHTML = makeTokens(inteiros);
+            document.getElementById('place-cortados').innerHTML = makeTokens(cortados);
+            document.getElementById('place-prontos').innerHTML = makeTokens(prontos);
+        }
+
+        // T1 - O GARGALO (Demora 2.5 segundos)
+        function cortarLegumes() {
+            if (inteiros > 0 && !isProcessing) {
+                isProcessing = true;
+                
+                // Pega uma ficha do primeiro círculo visualmente
+                inteiros--;
+                renderTokens();
+
+                let btn = document.getElementById('btn-t1');
+                let transbox = document.getElementById('trans-1');
+                
+                btn.classList.add('processing');
+                btn.innerText = "⏳ Gargalo...";
+                transbox.classList.add('processing');
+
+                // Simula o tempo de corte manual
+                setTimeout(() => {
+                    cortados++;
+                    isProcessing = false;
+                    btn.classList.remove('processing');
+                    btn.innerText = "Cortar Legumes (T1)";
+                    transbox.classList.remove('processing');
+                    renderTokens();
+                }, 2500); 
+            }
+        }
+
+        // T2 - Ação Rápida (Quase instantâneo)
+        function montarMarmita() {
+            if (cortados > 0 && !isProcessing) {
+                cortados--;
+                prontos++;
+                renderTokens(); // Atualiza na hora
             }
         }
 
         function reiniciar() {
-            document.getElementById("ficha").style.transform = "translateX(0px)";
-            estado = 0;
+            if(isProcessing) return; // Evita bugar se clicar enquanto corta
+            inteiros = 3;
+            cortados = 0;
+            prontos = 0;
+            renderTokens();
         }
-    </script>
 
+        // Renderiza as fichas iniciais ao carregar a página
+        renderTokens();
+    </script>
 </body>
 </html>
