@@ -1,0 +1,190 @@
+
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Rede de Petri: Restaurante</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; padding: 20px; }
+        
+        /* Marca d'água com seu nome */
+        .marca-dagua {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 150px; color: rgba(255, 255, 255, 0.03); font-weight: bold;
+            z-index: 0; pointer-events: none; user-select: none; white-space: nowrap;
+        }
+
+        .app-container { width: 100%; max-width: 420px; z-index: 1; position: relative; }
+        
+        .header { font-size: 18px; font-weight: 500; margin-bottom: 30px; margin-top: 20px; text-align: center;}
+        
+        /* Painel de Contadores */
+        .stats { margin-bottom: 30px; background: #1c1c1e; padding: 15px; border-radius: 12px; }
+        .stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #333; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #aaa; }
+        .stat-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .stat-value { font-weight: bold; color: #fff; font-size: 16px; }
+
+        /* Área de Simulação (Rede de Petri) */
+        .simulation-area { background-color: #1c1c1e; border-radius: 16px; padding: 40px 15px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; min-height: 250px; position: relative; }
+
+        .node-container { display: flex; flex-direction: column; align-items: center; gap: 10px; position: relative; width: 30%; }
+        
+        /* Aumentei o círculo para caber mais bolinhas */
+        .place { width: 85px; height: 85px; border-radius: 50%; border: 3px solid #666; display: flex; justify-content: center; align-content: center; gap: 4px; flex-wrap: wrap; padding: 8px; background-color: #1c1c1e; z-index: 2;}
+        .place-label { font-size: 10px; text-transform: uppercase; text-align: center; font-weight: bold; border: 1px solid #fff; padding: 4px 8px; border-radius: 12px; }
+
+        .transition { width: 25px; height: 60px; background-color: #5c8eb8; display: flex; justify-content: center; align-items: center; border-radius: 4px; position: relative; z-index: 2; transition: background-color 0.3s;}
+        .transition-label { position: absolute; top: -25px; font-size: 10px; font-weight: bold; white-space: nowrap; text-align: center; }
+
+        /* As Fichas (Tokens) um pouco menores para caber várias */
+        .token { width: 10px; height: 10px; background-color: #f39c12; border-radius: 50%; box-shadow: 0 0 6px rgba(243, 156, 18, 0.8); margin: 2px;}
+
+        /* Linhas conectoras */
+        .line { position: absolute; height: 2px; background-color: #444; width: 100%; top: 40px; left: 0; z-index: 1; }
+
+        /* Controles */
+        .controls { display: flex; flex-direction: column; gap: 10px; }
+        .btn-row { display: flex; gap: 10px; }
+        button { background-color: #3a3a3c; color: white; border: none; padding: 16px; border-radius: 12px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; flex: 1; }
+        button:hover { background-color: #4a4a4c; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .btn-full { width: 100%; }
+        .btn-add { background-color: #27ae60; color: white; }
+        .btn-add:hover { background-color: #2ecc71; }
+        
+        /* Efeito de processamento (Gargalo) */
+        .processing { background-color: #e67e22 !important; animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(0.95); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+    <div class="marca-dagua">Rogger</div>
+
+    <div class="app-container">
+        <div class="header">Simulador de Rede de Petri: Restaurante</div>
+
+        <div class="stats">
+            <div class="stat-row"><span>Inteiros (Estoque)</span> <span class="stat-value" id="val-inteiros">3</span></div>
+            <div class="stat-row"><span>Cortados (Prontos p/ uso)</span> <span class="stat-value" id="val-cortados">0</span></div>
+            <div class="stat-row"><span>Marmitas Prontas</span> <span class="stat-value" id="val-prontos">0</span></div>
+        </div>
+
+        <div class="simulation-area">
+            <div class="line"></div>
+            
+            <div class="node-container">
+                <div class="place" id="place-inteiros"></div>
+                <div class="place-label">Inteiros</div>
+            </div>
+
+            <div class="node-container" style="width: auto;">
+                <div class="transition-label">Cortar Legumes</div>
+                <div class="transition" id="trans-1"></div>
+            </div>
+
+            <div class="node-container">
+                <div class="place" id="place-cortados"></div>
+                <div class="place-label">Cortados</div>
+            </div>
+
+            <div class="node-container" style="width: auto;">
+                <div class="transition-label">Montar Marmita</div>
+                <div class="transition" id="trans-2" style="background-color: #7f8c8d;">🍽</div>
+            </div>
+
+            <div class="node-container">
+                <div class="place" id="place-prontos"></div>
+                <div class="place-label">Marmitas</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-full btn-add" onclick="adicionarLegumes()">➕ Receber Mais Legumes</button>
+            
+            <div class="btn-row">
+                <button id="btn-t1" onclick="cortarLegumes()">Cortar Legumes (T1)</button>
+                <button id="btn-t2" onclick="montarMarmita()">Montar Marmita (T2)</button>
+            </div>
+            
+            <button class="btn-full" onclick="reiniciar()" style="margin-top: 5px; background-color: #2c3e50;">🔄 Reiniciar Processo</button>
+        </div>
+    </div>
+
+    <script>
+        let inteiros = 3;
+        let cortados = 0;
+        let prontos = 0;
+        let isProcessing = false;
+
+        // Função para desenhar as bolinhas (fichas)
+        function renderTokens() {
+            document.getElementById('val-inteiros').innerText = inteiros;
+            document.getElementById('val-cortados').innerText = cortados;
+            document.getElementById('val-prontos').innerText = prontos;
+
+            const makeTokens = (qtd) => Array(qtd).fill('<div class="token"></div>').join('');
+            
+            document.getElementById('place-inteiros').innerHTML = makeTokens(inteiros);
+            document.getElementById('place-cortados').innerHTML = makeTokens(cortados);
+            document.getElementById('place-prontos').innerHTML = makeTokens(prontos);
+        }
+
+        // Função nova: Adiciona legumes instantaneamente
+        function adicionarLegumes() {
+            inteiros++;
+            renderTokens();
+        }
+
+        // T1 - O GARGALO (Demora 2.5 segundos)
+        function cortarLegumes() {
+            if (inteiros > 0 && !isProcessing) {
+                isProcessing = true;
+                
+                // Retira a ficha do estoque
+                inteiros--;
+                renderTokens();
+
+                let btn = document.getElementById('btn-t1');
+                let transbox = document.getElementById('trans-1');
+                
+                btn.classList.add('processing');
+                btn.innerText = "⏳ Cortando...";
+                transbox.classList.add('processing');
+
+                // Simula o tempo que a saladeira perde cortando manualmente
+                setTimeout(() => {
+                    cortados++;
+                    isProcessing = false;
+                    btn.classList.remove('processing');
+                    btn.innerText = "Cortar Legumes (T1)";
+                    transbox.classList.remove('processing');
+                    renderTokens();
+                }, 2500); 
+            }
+        }
+
+        // T2 - Ação Rápida (Quase instantâneo)
+        function montarMarmita() {
+            if (cortados > 0 && !isProcessing) { // Só monta se o corte não estiver travando o fluxo
+                cortados--;
+                prontos++;
+                renderTokens(); 
+            }
+        }
+
+        function reiniciar() {
+            if(isProcessing) return; // Evita bugar a animação se estiver no meio do corte
+            inteiros = 3;
+            cortados = 0;
+            prontos = 0;
+            renderTokens();
+        }
+
+        // Inicializa a tela
+        renderTokens();
+    </script>
+</body>
+</html>
